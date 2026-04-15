@@ -12,15 +12,20 @@ RUN apt-get update && apt-get install -y \
 RUN ln -s /usr/lib/x86_64-linux-gnu/libboost_python310.so /usr/lib/x86_64-linux-gnu/libboost_python3.so && \
     ln -s /usr/lib/x86_64-linux-gnu/libboost_python310.a /usr/lib/x86_64-linux-gnu/libboost_python3.a
 
-# 3. Environment-specific tool setup
+# 3. Core AI tools
 RUN pip install --no-cache-dir --upgrade pip setuptools==65.5.0 wheel
 RUN pip install --no-cache-dir torch torchvision captum streamlit opencv-python-headless
 
-# 4. Install gym without isolation so it uses our downgraded setuptools
-RUN pip install --no-cache-dir gym==0.21.0 --no-build-isolation
+# 4. SURGERY: Fix the broken gym metadata
+WORKDIR /opt
+RUN git clone https://github.com/openai/gym.git && \
+    cd gym && \
+    git checkout 0.21.0 && \
+    # This sed command finds the broken 'opencv-python' line and removes it to prevent the crash
+    sed -i "s/'opencv-python[^']*'//g" setup.py && \
+    pip install -e .
 
 # 5. Build the Football Engine
-WORKDIR /opt
 RUN git clone https://github.com/google-research/football.git
 WORKDIR /opt/football
 RUN pip install --no-deps .
