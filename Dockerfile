@@ -16,13 +16,13 @@ RUN ln -s /usr/lib/x86_64-linux-gnu/libboost_python310.so /usr/lib/x86_64-linux-
 RUN pip install --no-cache-dir --upgrade pip setuptools==65.5.0 wheel
 RUN pip install --no-cache-dir torch torchvision captum streamlit opencv-python-headless
 
-# 4. SURGERY: Fix the broken gym metadata
+# 4. SURGERY: Fix the broken gym metadata (using the 'v' tag)
 WORKDIR /opt
 RUN git clone https://github.com/openai/gym.git && \
     cd gym && \
-    git checkout 0.21.0 && \
-    # This sed command finds the broken 'opencv-python' line and removes it to prevent the crash
-    sed -i "s/'opencv-python[^']*'//g" setup.py && \
+    git checkout v0.21.0 && \
+    # Remove the broken opencv requirement and the trailing comma if it exists
+    sed -i "s/'opencv-python[^']*'\(,\)\?//g" setup.py && \
     pip install -e .
 
 # 5. Build the Football Engine
