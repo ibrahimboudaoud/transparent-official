@@ -12,24 +12,22 @@ RUN apt-get update && apt-get install -y \
 RUN ln -s /usr/lib/x86_64-linux-gnu/libboost_python310.so /usr/lib/x86_64-linux-gnu/libboost_python3.so && \
     ln -s /usr/lib/x86_64-linux-gnu/libboost_python310.a /usr/lib/x86_64-linux-gnu/libboost_python3.a
 
-# 3. Core AI tools
-RUN pip install --no-cache-dir --upgrade pip setuptools==65.5.0 wheel
-RUN pip install --no-cache-dir torch torchvision captum streamlit opencv-python-headless
+# 3. Standard AI tools
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir torch torchvision captum streamlit opencv-python-headless pygame psutil
 
-# 4. SURGERY: Fix the broken gym metadata (using the 'v' tag)
+# 4. MANUALLY install gym 0.21.0 to bypass metadata errors
 WORKDIR /opt
 RUN git clone https://github.com/openai/gym.git && \
     cd gym && \
     git checkout v0.21.0 && \
-    # Remove the broken opencv requirement and the trailing comma if it exists
-    sed -i "s/'opencv-python[^']*'\(,\)\?//g" setup.py && \
-    pip install -e .
+    cp -r gym /usr/local/lib/python3.10/site-packages/
 
 # 5. Build the Football Engine
 RUN git clone https://github.com/google-research/football.git
 WORKDIR /opt/football
+# We use --no-deps because we manually "installed" gym above
 RUN pip install --no-deps .
-RUN pip install pygame psutil
 
 WORKDIR /app
 COPY . /app
